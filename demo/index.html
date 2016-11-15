@@ -5,8 +5,8 @@
     <title>Threejs Viewcube Navigation Control</title>
     <script src="../vendor/jquery/dist/jquery.min.js"></script>
     <script src="../vendor/mousetrap/mousetrap.min.js"></script>
-    <script src="../vendor/three.js/build/three.min.js"></script>
-    <script src="../vendor/tween.js/build/tween.min.js"></script>
+    <script src="../vendor/three.js/three.min.js"></script>
+    <script src="../vendor/tweenjs/src/Tween.js"></script>
     <script src="../lib/viewcube.js"></script>
     <style>
         body {
@@ -40,16 +40,12 @@
     <div id="viewcube"></div>
     <script>
         $(document).ready(function () {
-            // viewcube
-            var viewcube = window.viewcube = new FOUR.Viewcube('viewcube');
-            viewcube.init();
-
             // A webgl viewport that will interact with our viewcube
             var domElement = document.getElementById('viewport');
             var renderer = new THREE.WebGLRenderer({antialias: true});
             renderer.setClearColor(0x000000);
             renderer.setSize(domElement.clientWidth, domElement.clientHeight);
-            renderer.shadowMap.enabled = true;
+            //renderer.shadowMap.enabled = true;
             domElement.appendChild(renderer.domElement);
 
             // scene
@@ -88,8 +84,41 @@
                 // TODO zoom to fit geometry
                 render();
             });
+			
+			// viewcube
+			/*
+			var viewcubeElement = document.getElementById('viewcube');
+			viewcube = new FOUR.Viewcube({
+				domElement: viewcubeElement,
+				display: {
+					compass: false,
+					cube: true,
+					labels: true,
+					//sceneAxis: true,
+					//cameraAxis: true,
+					//controlAxis: true,
+					normals: false
+				},
+				viewport: {
+					camera: camera
+				}
+			});
+			viewcube.enable();
+			*/
+
+			/*
+			orbit_control.addEventListener('update', function () {
+				console.log("update orbit");
+				viewcube.updateOrientation();
+			});
+			orbit_control.addEventListener('change', function () {
+				console.log("change orbit");
+				viewcube.updateOrientation();
+			});
+			*/
 
             function render () {
+				//viewcube.update();
                 renderer.render(scene, camera);
             }
 
