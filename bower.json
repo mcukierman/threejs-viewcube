@@ -19,7 +19,7 @@
     "bluebird": "~2.10.0",
     "jquery": "~2.1.4",
     "mousetrap": "~1.5.3",
-    "three.js": "https://github.com/mrdoob/three.js.git",
-    "tween.js": "https://github.com/tweenjs/tween.js.git"
+    "three.js": "~0.82.0",
+    "tweenjs": "~16.3.5"
   }
 }
