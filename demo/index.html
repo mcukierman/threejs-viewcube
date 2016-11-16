@@ -95,31 +95,6 @@
 
                 render();
             });
-            
-            var test_doll;
-            loader.load('/demo/model/miku-chibi/miku.min.json', function (geometry, materials) {
-                materials.forEach( function ( material ) {
-                    material.skinning = true;
-                } );
-                test_doll = new THREE.SkinnedMesh( geometry, new THREE.MeshFaceMaterial( materials ) );
-                test_doll.scale.fromArray([15,15,15]);
-                var axisHelper = new THREE.AxisHelper(100);
-                test_doll.add(axisHelper);
-                test_doll.position.set(0,0,50);
-                test_doll.lookAt(new THREE.Vector3(0,0,0));
-
-
-
-                scene.add(test_doll);
-
-                render();
-            });
-
-//            loader.load('model/car.json', function (geometry, materials) {
-//                var mesh = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial( materials ));
-//                scene.add(mesh);
-//                render();
-//            });
 			
 			// viewcube
 			var viewcubeElement = document.getElementById('viewcube');
@@ -139,7 +114,6 @@
 				}
 			});
 			viewcube.enable();
-            window.vc = viewcube;
 
 			orbit_control.addEventListener('change', function () {
                 // sync viewcube with new camera rotation
@@ -151,15 +125,46 @@
                 var yawPitch = event.direction;
                 var view = event.view;
 
-                var q = new THREE.Quaternion();
-                q.setFromEuler(new THREE.Euler(yawPitch.pitch, Math.PI+yawPitch.yaw, 0, "YXZ"));
+//                var q = new THREE.Quaternion();
+//                q.setFromEuler(new THREE.Euler(yawPitch.pitch, Math.PI+yawPitch.yaw, 0, "YXZ"));
+//                test_doll.quaternion.copy(q);
 
-                console.log("yawPitch", yawPitch);
-
-
-                test_doll.quaternion.copy(q);
-
+                ////////
+                rotateCameraAroundByYawPitch(camera, new THREE.Vector3(), yawPitch.yaw, yawPitch.pitch);
             });
+
+            function rotateCameraAroundByYawPitch(camera, target, yaw, pitch) {
+                // TODO: add tween here.... somehow
+                var spherical = new THREE.Spherical();
+                var offset = new THREE.Vector3();
+
+                // so camera.up is the orbit axis
+                var quat = new THREE.Quaternion().setFromUnitVectors( camera.up, new THREE.Vector3( 0, 1, 0 ) );
+                var quatInverse = quat.clone().inverse();
+
+                var position = camera.position;
+
+                offset.copy( position ).sub( target );
+
+                // rotate offset to "y-axis-is-up" space
+                offset.applyQuaternion( quat );
+
+                // angle from z-axis around y-axis
+                spherical.setFromVector3( offset );
+
+                spherical.theta += yaw - spherical.theta;
+                var spherical_pitch = (pitch*-1) + Math.PI/2;
+                spherical.phi += spherical_pitch-spherical.phi;
+
+                spherical.makeSafe();
+                // spherical.radius *= scale;
+                offset.setFromSpherical( spherical );
+
+                // rotate offset back to "camera-up-vector-is-up" space
+                offset.applyQuaternion( quatInverse );
+                position.copy( target ).add( offset );
+                camera.lookAt( target );
+            }
 
             function render () {
 				viewcube.update();
