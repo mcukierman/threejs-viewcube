@@ -92,6 +92,26 @@
                 var mesh = new THREE.SkinnedMesh( geometry, new THREE.MeshFaceMaterial( materials ) );
                 mesh.scale.fromArray([25,25,25]);
                 scene.add(mesh);
+
+                render();
+            });
+            
+            var test_doll;
+            loader.load('/demo/model/miku-chibi/miku.min.json', function (geometry, materials) {
+                materials.forEach( function ( material ) {
+                    material.skinning = true;
+                } );
+                test_doll = new THREE.SkinnedMesh( geometry, new THREE.MeshFaceMaterial( materials ) );
+                test_doll.scale.fromArray([15,15,15]);
+                var axisHelper = new THREE.AxisHelper(100);
+                test_doll.add(axisHelper);
+                test_doll.position.set(0,0,50);
+                test_doll.lookAt(new THREE.Vector3(0,0,0));
+
+
+
+                scene.add(test_doll);
+
                 render();
             });
 
@@ -119,6 +139,7 @@
 				}
 			});
 			viewcube.enable();
+            window.vc = viewcube;
 
 			orbit_control.addEventListener('change', function () {
                 // sync viewcube with new camera rotation
@@ -127,6 +148,17 @@
 
             viewcube.addEventListener('update', function(event){
                 //TODO: position and rotate camera around it's target
+                var yawPitch = event.direction;
+                var view = event.view;
+
+                var q = new THREE.Quaternion();
+                q.setFromEuler(new THREE.Euler(yawPitch.pitch, Math.PI+yawPitch.yaw, 0, "YXZ"));
+
+                console.log("yawPitch", yawPitch);
+
+
+                test_doll.quaternion.copy(q);
+
             });
 
             function render () {
