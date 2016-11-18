@@ -98,16 +98,17 @@
 			
 			// viewcube
 			var viewcubeElement = document.getElementById('viewcube');
+            // simple
+            //var viewcube = new FOUR.Viewcube(viewcubeElement, camera);
+            // extended
 			var viewcube = new FOUR.Viewcube({
 				domElement: viewcubeElement,
+                labelSize: 256,
+                labelFontSize: 52,
 				display: {
-					compass: false,
-					cube: true,
-					labels: true,
-					sceneAxis: true,
+					sceneAxis: true
 					//cameraAxis: true,
 					//controlAxis: true,
-					normals: false
 				},
 				viewport: {
 					camera: camera
