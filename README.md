@@ -37,7 +37,6 @@ viewcube.addEventListener('update', function(event){
 See `\demo` for example usage.
 
 ## TODO:
-- create labels textures from text
 - add 90deg rotation controls when oriented to face, to switch from `top` to `front`(or `left`,`right`,`back`) with one click
 - update build process
 - add tween `update` event?
