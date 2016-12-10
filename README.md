@@ -37,9 +37,7 @@ viewcube.addEventListener('update', function(event){
 See `\demo` for example usage.
 
 ## TODO:
-- add 90deg rotation controls when oriented to face, to switch from `top` to `front`(or `left`,`right`,`back`) with one click
-- update build process
-- add tween `update` event?
+- update build process, dependencies
 
 ## Build dependencies
 
