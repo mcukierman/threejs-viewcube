@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Threejs Viewcube Navigation Control</title>
+    <script src="../vendor/jquery/dist/jquery.min.js"></script>
+    <script src="../vendor/mousetrap/mousetrap.min.js"></script>
+    <script src="../vendor/three.js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="../vendor/tweenjs/src/Tween.js"></script>
+    <script src="../lib/viewcube.js"></script>
+    <style>
+        body {
+            background: #444;
+            margin:0;
+            padding:0;
+        }
+        #viewcube {
+            background-color: transparent;
+            border: 1px solid rgba(0,0,0,0.1);
+            height: 340px;
+            overflow: hidden;
+            position: absolute;
+            right: 20px;
+            top: 0;
+            width: 340px;
+            z-index: 500;
+        }
+        #viewport {
+            bottom: 0;
+            left: 0;
+            overflow: hidden;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewport"></div>
+    <div id="viewcube"></div>
+    <script>
+        $(document).ready(function () {
+            // A webgl viewport that will interact with our viewcube
+            var domElement = document.getElementById('viewport');
+            var renderer = new THREE.WebGLRenderer();
+            //renderer.setClearColor(0x000000);
+            renderer.setClearColor( 0xf0f0f0 );
+            renderer.setSize(domElement.clientWidth, domElement.clientHeight);
+            //renderer.shadowMap.enabled = true;
+            domElement.appendChild(renderer.domElement);
+
+            // scene
+            var scene = new THREE.Scene();
+
+            // lights
+            var ambientLight = new THREE.AmbientLight(0x888888);
+            var spotLight = new THREE.SpotLight(0xffffff);
+            spotLight.position.set(100, 140, 130);
+            spotLight.intensity = 1;
+            scene.add(spotLight);
+            scene.add(ambientLight);
+
+            // camera
+//            var camera = new THREE.PerspectiveCamera(50, domElement.clientWidth / domElement.clientHeight, 0.1, 1000);
+//            camera.lookAt(0,0,0);
+//            camera.position.set(100,100,100);
+//            camera.up = new THREE.Vector3(0,0,1);
+            var camera_distance = 100;
+            var aspect = domElement.clientWidth / domElement.clientHeight;
+            var camera = new THREE.PerspectiveCamera(60, aspect, 1, 1000);
+            camera.position.set(camera_distance, camera_distance, camera_distance);
+            camera.lookAt(new THREE.Vector3());
+
+            scene.add(camera);
+
+            var axisHelper = new THREE.AxisHelper(100);
+            scene.add(axisHelper);
+
+            // camera mouse control
+            var orbit_control = new THREE.OrbitControls(camera, renderer.domElement);
+            orbit_control.enableDamping = true;
+            orbit_control.dampingFactor = 0.25;
+            orbit_control.enableZoom = true;
+            orbit_control.enablePan = false;
+
+            // add some geometry for demonstration purposes
+            var loader = new THREE.JSONLoader();
+            loader.load('/demo/model/miku-chibi/miku.min.json', function (geometry, materials) {
+                materials.forEach( function ( material ) {
+                    material.skinning = true;
+                } );
+                var mesh = new THREE.SkinnedMesh( geometry, new THREE.MeshFaceMaterial( materials ) );
+                mesh.scale.fromArray([25,25,25]);
+                scene.add(mesh);
+
+                render();
+            });
+			
+			// viewcube
+			var viewcubeElement = document.getElementById('viewcube');
+            // simple
+            //var viewcube = new FOUR.Viewcube(viewcubeElement, camera);
+            // extended
+			var viewcube = new FOUR.Viewcube({
+				domElement: viewcubeElement,
+                labelSize: 256,
+                labelFontSize: 52,
+				updateTween: false,
+				display: {
+					sceneAxis: true
+					//cameraAxis: true,
+					//controlAxis: true,
+				},
+				viewport: {
+					camera: camera
+				}
+			});
+			viewcube.enable();
+
+			orbit_control.addEventListener('change', function () {
+                // sync viewcube with new camera rotation
+				viewcube.updateOrientation();
+			});
+
+            viewcube.addEventListener('update', function(event){
+                //TODO: position and rotate camera around it's target
+                var yawPitch = event.direction;
+                var view = event.view;
+
+//                var q = new THREE.Quaternion();
+//                q.setFromEuler(new THREE.Euler(yawPitch.pitch, Math.PI+yawPitch.yaw, 0, "YXZ"));
+//                test_doll.quaternion.copy(q);
+
+                ////////
+                rotateCameraAroundByYawPitch(camera, new THREE.Vector3(), yawPitch.yaw, yawPitch.pitch, true);
+            });
+
+
+            function getCameraYawPitch(camera, target) {
+                var spherical = new THREE.Spherical();
+                var offset = new THREE.Vector3();
+
+                // so camera.up is the orbit axis
+                var quat = new THREE.Quaternion().setFromUnitVectors( camera.up, new THREE.Vector3( 0, 1, 0 ) );
+                var position = camera.position;
+
+                offset.copy( position ).sub( target );
+
+                // rotate offset to "y-axis-is-up" space
+                offset.applyQuaternion( quat );
+
+                // angle from z-axis around y-axis
+                spherical.setFromVector3( offset );
+
+                return {yaw: spherical.theta, pitch: Math.PI/2-spherical.phi};
+            }
+
+            function rotateCameraAroundByYawPitch(camera, target, yaw, pitch, animate) {
+                // TODO: add tween here.... somehow
+                if (typeof animate === 'undefined')
+                    animate = false;
+
+                if (!animate) {
+                    setCameraYawPitch(camera, target, yaw, pitch);
+                } else {
+                    tweenCamera(camera, target, yaw, pitch);
+                }
+
+            }
+
+            function tweenCamera(camera, target, yaw, pitch) {
+
+                var start = getCameraYawPitch(camera, target);
+                var finish = {yaw:yaw, pitch:pitch};
+
+                var tween = new TWEEN.Tween(start).to(finish, 1000);
+                tween.easing(TWEEN.Easing.Cubic.InOut);
+                tween.onComplete(function () {
+                    setCameraYawPitch(camera, target, yaw, pitch);
+                    //render();
+                    tween.stop();
+                });
+                tween.onUpdate(function () {
+                    //console.log("tween u", this.yaw.toFixed(3), this.pitch.toFixed(3));
+                    setCameraYawPitch(camera, target, this.yaw, this.pitch);
+                    // render();
+                });
+                tween.start();
+            }
+
+            function setCameraYawPitch(camera, target, yaw, pitch) {
+                // console.log("setCameraYawPitch", yaw.toFixed(5), pitch.toFixed(5));
+                var spherical = new THREE.Spherical();
+                var offset = new THREE.Vector3();
+
+                // so camera.up is the orbit axis
+                var quat = new THREE.Quaternion().setFromUnitVectors( camera.up, new THREE.Vector3( 0, 1, 0 ) );
+                var quatInverse = quat.clone().inverse();
+                var position = camera.position;
+
+                offset.copy( position ).sub( target );
+
+                // rotate offset to "y-axis-is-up" space
+                offset.applyQuaternion( quat );
+
+                // angle from z-axis around y-axis
+                spherical.setFromVector3( offset );
+
+                var thetaDelta = yaw - spherical.theta;
+                var phiDelta = (-pitch + Math.PI/2)-spherical.phi;
+
+                spherical.theta += thetaDelta;
+                spherical.phi += phiDelta;
+
+                spherical.makeSafe();
+                offset.setFromSpherical( spherical );
+
+                // rotate offset back to "camera-up-vector-is-up" space
+                offset.applyQuaternion( quatInverse );
+
+                camera.position.copy(target).add(offset);
+                camera.lookAt(target);
+            }
+
+            function render () {
+                renderer.render(scene, camera);
+            }
+
+            function animate() {
+                TWEEN.update();
+                viewcube.update();
+                requestAnimationFrame(animate);
+                render();
+            }
+
+            animate();
+
+        });
+    </script>
+</body>
+</html>
